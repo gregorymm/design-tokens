@@ -52,18 +52,46 @@ After the user chooses, read the corresponding format reference for detailed str
 
 ## Step 3: Access Method
 
+**Before choosing the access method, ask the user what Figma plan their org is on.** This is critical because the Figma Variables REST API is **Enterprise-only**.
+
+```
+What Figma plan is your organization on?
+
+   1) Starter / Professional / Organization
+   2) Enterprise
+   3) Not sure — I'll check
+```
+
+If the user answers **1 (non-Enterprise)**:
+- The REST API cannot read or write Figma Variables (`file_variables:*` scopes don't exist on their plan)
+- Recommend the **Figma Desktop MCP path** (works on all plans)
+- OR offer **styles-only REST extraction** (typography, effects, color styles — no variables)
+- Write-back is not available
+
+If the user answers **2 (Enterprise)**:
+- Both MCP and REST API paths work
+- Write-back via REST API is available
+
+If the user answers **3 (not sure)**: have them check `figma.com/settings → Personal access tokens → Create new token`. If "File variables" appears as a scope checkbox, they're on Enterprise. If not, they're on a lower tier.
+
+Then present the access method:
+
 ```
 How to connect to Figma?
 
-   A) Figma Desktop MCP — Figma app must be open (read-only, fast)
-   B) REST API — provide a Personal Access Token (works headlessly, supports write-back)
+   A) Figma Desktop MCP — Figma app must be open (read-only, works on any plan)
+   B) REST API — Personal Access Token (Enterprise required for variables; other plans only get styles/nodes)
 ```
 
 **MCP path:** Use `mcp__Figma__get_variable_defs` and `mcp__Figma__get_design_context`. The Figma desktop app must have the target file open. MCP tools are read-only — cannot write back.
 
-**REST API path:** Prompt for `FIGMA_TOKEN` (Personal Access Token with `file_variables:read`, `file_variables:write`, `file_content:read` scopes). Store in a shell variable for the session. Read `references/figma-api.md` for endpoint details.
+**REST API path (Enterprise):** Prompt for `FIGMA_TOKEN` with scopes `file_variables:read`, `file_variables:write` (if writing back), `file_content:read`.
 
-**Important:** Write-back (flow B) always requires REST API regardless of extract method choice.
+**REST API path (non-Enterprise, styles-only):** Prompt for `FIGMA_TOKEN` with just `file_content:read`. Skip the `/variables/local` call; use only `/styles` and `/nodes` endpoints. The output will include typography, effects, and color styles but NOT Figma Variables.
+
+**Important:** Write-back flow always requires REST API on **Enterprise**.
+
+Read `references/figma-api.md` for endpoint details and plan requirements table.
 
 ## Step 4: Collect Figma Files
 
@@ -433,7 +461,8 @@ Load these on-demand as needed during execution — do NOT preload all at startu
 
 | Error | Action |
 |-------|--------|
-| HTTP 403 from Figma API | PAT lacks required scopes. Ask user to regenerate with `file_variables:read`, `file_variables:write`, `file_content:read` |
+| HTTP 403 on `/variables/local` or `POST /variables` | Likely means the Figma org is NOT on Enterprise plan. The `file_variables:*` scopes only exist on Enterprise. Offer: switch to MCP path, or continue with styles-only extraction via `/styles` + `/nodes` |
+| HTTP 403 on `/styles` or `/nodes` | PAT is missing `file_content:read`. Ask user to regenerate the PAT with that scope |
 | HTTP 429 (rate limited) | Read `Retry-After` header, wait, retry. Batch requests to minimize calls |
 | HTTP 404 | File key is invalid or user lacks access |
 | MCP tools unavailable | Fall back to REST API path. Prompt for PAT |

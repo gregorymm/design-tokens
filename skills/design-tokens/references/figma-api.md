@@ -1,5 +1,19 @@
 # Figma REST API Reference for Design Tokens
 
+## ⚠️ Plan Requirements (IMPORTANT)
+
+**The Figma Variables REST API is Enterprise-only.** The `file_variables:read` and `file_variables:write` scopes only appear in PAT settings for users on Figma Enterprise plans.
+
+| Figma Plan | `/styles` endpoint | `/nodes` endpoint | `/variables/local` endpoint | Write-back `POST /variables` |
+|------------|-------------------|-------------------|---------------------------|------------------------------|
+| Starter / Professional / Organization | ✅ | ✅ | ❌ 403 | ❌ 403 |
+| Enterprise | ✅ | ✅ | ✅ | ✅ |
+
+**Before prompting for a PAT, ask the user what Figma plan they're on.** If they're not on Enterprise:
+- Recommend the **Figma Desktop MCP path** instead (works on all plans)
+- Or fall back to **styles-only extraction** via REST API (no variables, but typography/effects/color styles still work)
+- Write-back is not possible — only available on Enterprise
+
 ## Authentication
 
 All requests require a Personal Access Token (PAT) in the header:
@@ -9,9 +23,9 @@ X-FIGMA-TOKEN: <your-pat>
 ```
 
 **Required scopes:**
-- `file_variables:read` — read variables and collections
-- `file_variables:write` — create/update variables (write-back)
-- `file_content:read` — read nodes, styles, component properties
+- `file_content:read` — read nodes, styles, component properties (all plans)
+- `file_variables:read` — read variables and collections (**Enterprise only**)
+- `file_variables:write` — create/update variables for write-back (**Enterprise only**)
 
 ## Extracting File Keys from URLs
 
