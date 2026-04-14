@@ -113,7 +113,7 @@ In Claude Code, ask: `what skills do you have?` — `design-tokens` should appea
 | | W3C DTCG | CTI |
 |---|---|---|
 | **Field prefix** | `$value`, `$type` | `value`, `type` |
-| **Naming order** | Component first: `button.primary.bg.color` | Category first: `color.bg.button.primary` |
+| **Naming order** | Component first: `button.primary.bg.color` | Category first: `color.button.bg.primary` |
 | **Best for** | Style Dictionary v4+, new projects | Style Dictionary v3, legacy systems |
 
 ## Output
