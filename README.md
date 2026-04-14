@@ -40,7 +40,19 @@ Restart Claude Code.
 
 ## How to use in Claude Code
 
-The skill is **auto-triggered** when you say anything that matches its description. Try any of these:
+The skill can be invoked two ways:
+
+### 1. Explicit slash command
+
+```
+/design-tokens
+```
+
+Type `/design-tokens` in Claude Code — the skill runs immediately and walks you through the prompts.
+
+### 2. Natural language (auto-trigger)
+
+Just describe what you want. Claude Code matches the skill's trigger phrases and runs it automatically:
 
 - `extract design tokens from my Figma files`
 - `export figma variables as design tokens`
@@ -48,8 +60,6 @@ The skill is **auto-triggered** when you say anything that matches its descripti
 - `sync tokens between Figma and code`
 - `write my tokens.json back to Figma`
 - `pull design tokens from these Figma files: <url1> <url2>`
-
-Claude Code will match your message to the skill's description (`extract tokens`, `figma tokens`, `design tokens`, `token export`, `write tokens back`, `push tokens to figma`, `sync tokens`) and run it automatically.
 
 ### What happens next
 

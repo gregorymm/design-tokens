@@ -1,6 +1,8 @@
 ---
 name: design-tokens
 description: Extract design tokens from Figma design system files (variables, styles, component properties) into W3C DTCG or CTI format. Generates tokens.json, tokens.css, tokens.scss, and Style Dictionary config. Supports write-back to push local token changes into Figma variables via REST API. Triggers on "extract tokens", "design tokens", "figma tokens", "token export", "export variables from figma", "write tokens back", "push tokens to figma", "sync tokens".
+user-invocable: true
+version: 1.0.0
 ---
 
 # Design Tokens Extractor
