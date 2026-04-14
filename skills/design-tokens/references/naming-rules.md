@@ -120,7 +120,9 @@ If Figma structure is flat or ambiguous:
 ## Naming Formulas
 
 ### CTI Format
-Physical property leads. Category is always first. Follows strict Style Dictionary `Category-Type-Item-Subitem-State` order.
+Physical category leads. Category is always first.
+
+**Note on variants:** two CTI orderings exist in the wild. The strict Style Dictionary formula is `Category-Type-Item-Subitem-State` (property before component, e.g. `color-bg-button-primary`). The community convention used by many design systems — and followed by this skill — is `Category-Component-Property-Role-State` (component before property, e.g. `color-button-bg-primary`). The community variant keeps all `button` tokens grouped together in filenames and IDE autocomplete, which is more ergonomic for component-based frontends.
 
 **Semantic:** `{category}-{property}-{role}-{prominence}-{state}`
 - `color-bg-primary` (default state implied)
@@ -132,16 +134,15 @@ Physical property leads. Category is always first. Follows strict Style Dictiona
 - `radius-lg`
 - `shadow-md`
 
-**Component:** `{category}-{property}-{component}-{subitem}-{state}`
+**Component:** `{category}-{component}-{property}-{role}-{prominence}-{state}`
 
-Property (Type) comes BEFORE the component name in strict CTI. Component and subitem are nested under property.
-- `color-bg-button-primary` (Category=color, Type=bg, Item=button, Subitem=primary)
-- `color-bg-button-primary-hover`
-- `color-text-button-primary`
-- `color-border-input-focus`
-- `radius-button-md` (when only one property applies, no nested subitem)
-
-**Common mistake:** writing `color-button-bg-primary` (component before property). That's OOD/W3C order, not CTI. In CTI, the physical property leads so developers can grep all backgrounds with `color-bg-`.
+Component name comes right after the category, then property, then role. Groups all tokens for a component together.
+- `color-button-bg-primary` (Category=color, Component=button, Property=bg, Role=primary)
+- `color-button-bg-primary-hover`
+- `color-button-text-primary`
+- `color-input-border-focus`
+- `radius-button-md`
+- `spacing-button-padding-sm`
 
 ### W3C Format
 Component/context leads. Category is at the end.
