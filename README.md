@@ -14,9 +14,43 @@ Extract design tokens from Figma design system files and write them back. Suppor
 
 ## Install
 
+### Option A: Claude Code CLI (recommended)
+
+Run inside Claude Code:
+
 ```
 /install-plugin gregorymm/design-tokens
 ```
+
+### Option B: Manual install
+
+1. Clone the repo into your Claude Code plugins directory:
+
+```bash
+cd ~/.claude/plugins/marketplaces
+git clone https://github.com/gregorymm/design-tokens.git gregorymm-design-tokens
+```
+
+2. Restart Claude Code. The `design-tokens` skill will be auto-discovered.
+
+### Option C: Add as a marketplace source
+
+Add to your `~/.claude/settings.json`:
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "gregorymm-design-tokens": {
+      "source": {
+        "source": "github",
+        "repo": "gregorymm/design-tokens"
+      }
+    }
+  }
+}
+```
+
+Then enable the plugin in Claude Code settings.
 
 ## Usage
 
