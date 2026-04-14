@@ -343,6 +343,37 @@ Extraction Complete
   - 1 variable with unsupported type BOOLEAN (included as-is)
 ```
 
+### E8: Offer Write-Back (ALWAYS PROMPT)
+
+**MANDATORY.** After displaying the extraction summary, always offer to push the extracted tokens back into Figma and rebind existing layers to use them. This is the promise of bidirectional sync — don't skip it.
+
+Present the prompt:
+
+```
+Push these tokens back to Figma and rebind layers?
+
+   A) Yes — create missing variables AND rebind existing layers
+      (components stop using raw hex, start referencing the new variables)
+   B) Variables only — create/update Figma variables but DO NOT rebind layers
+   C) No — skip write-back, I'll use the generated files only
+
+Note: Write-back requires Figma Enterprise for the Variables REST API.
+On non-Enterprise plans, this option is not available.
+```
+
+**If the user picked Enterprise earlier in Step 3**, all three options are valid — route:
+- **A** → run Write-Back Flow (W1–W7) AND Layer Rebind Flow (R1–R4)
+- **B** → run Write-Back Flow only (W1–W7)
+- **C** → end
+
+**If the user is NOT on Enterprise**, skip the offer entirely and end with a note:
+
+```
+Write-back is not available on your Figma plan.
+To push tokens to Figma, upgrade to Enterprise or use a Figma plugin
+(e.g. Tokens Studio) that imports tokens.json directly.
+```
+
 ---
 
 ## Write-Back Flow (Code → Figma)
@@ -443,6 +474,106 @@ Write-Back Complete
 
 ---
 
+## Layer Rebind Flow (Figma Enterprise, after Write-Back)
+
+This flow runs only when the user picks option **A** in step E8 (Push tokens back AND rebind layers). It walks every component/layer in the target Figma file(s) and replaces raw hex values / unbound properties with references to the newly-created or updated variables.
+
+**Prerequisite:** Write-Back Flow (W1–W7) has completed successfully and you have the `{variablePath → variableId}` map from step W3 (expanded with any new IDs returned by the POST call in W6).
+
+### R1: Enumerate All Layers Using Raw Values
+
+For each Figma file in scope, fetch the full document tree:
+
+```bash
+curl -s -H "X-FIGMA-TOKEN: $FIGMA_TOKEN" \
+  "https://api.figma.com/v1/files/<KEY>?geometry=paths"
+```
+
+Recursively walk every node. For each node, collect properties that could be rebound:
+
+| Node property | Token category | Binding field |
+|--------------|----------------|---------------|
+| `fills[].color` (SOLID paint) | color | `boundVariables.fills` |
+| `strokes[].color` (SOLID paint) | color | `boundVariables.strokes` |
+| `effects[].color` (DROP_SHADOW, INNER_SHADOW) | color | `boundVariables.effects` |
+| `cornerRadius` (number) | radius | `boundVariables.cornerRadius` |
+| `itemSpacing` (number) | spacing | `boundVariables.itemSpacing` |
+| `paddingLeft` / `paddingRight` / `paddingTop` / `paddingBottom` | spacing | `boundVariables.paddingLeft` etc. |
+| `style.fontSize`, `fontWeight`, `fontFamily`, `lineHeightPx`, `letterSpacing` | font | `boundVariables.<prop>` on text nodes |
+
+**Skip nodes that already have `boundVariables` for a given property** — they're already using a variable.
+
+### R2: Match Raw Values to Tokens
+
+For each unbound raw value found in R1, look up whether a matching variable exists in the `{value → variableId}` reverse map built from the extracted tokens. Matching rules:
+
+- **Colors:** exact hex match (normalize both sides to `#RRGGBB` or `#RRGGBBAA`). For near-matches (ΔE < 2), prompt the user; don't auto-rebind.
+- **Numbers (radius, spacing):** exact match.
+- **Font properties:** exact family/weight/size match.
+
+Build a **rebind plan** — a list of `{nodeId, property, variableId}` tuples for every match.
+
+### R3: Preview the Rebind
+
+Display a summary before executing any changes:
+
+```
+Layer Rebind Preview
+
+  Total layers scanned:      1,248
+  Layers using raw values:     312
+  Exact matches to tokens:     287
+  Near-matches (not rebinding): 18
+  No match (kept as raw):       7
+
+  Rebind breakdown:
+    fills:          184 layers (color tokens)
+    strokes:         42 layers (color tokens)
+    effects:         16 layers (color tokens)
+    cornerRadius:    28 layers (radius tokens)
+    padding/gap:      9 layers (spacing tokens)
+    typography:       8 layers (font tokens)
+
+  Proceed with rebind? (y/n)
+```
+
+**Never auto-execute.** Wait for explicit user confirmation.
+
+### R4: Execute the Rebind
+
+Figma's variable binding API uses `POST /v1/files/:key/variables` for variable CRUD, but binding variables to layer properties requires a different endpoint. Use the **`PUT /v1/files/:key/nodes`** endpoint (or the equivalent plugin API via a helper plugin) with a request body specifying `boundVariables` for each target node.
+
+**Batch constraints:**
+- Group rebinds by file — one request per file
+- Max request body size: 4MB; split into multiple requests if exceeded
+- Rate limit: Tier 3 writes (50–150 req/min depending on plan)
+
+**Important caveat:** The Figma REST API has limited support for writing `boundVariables` on existing nodes. If the direct REST path fails, the skill should:
+1. Report the affected nodes and the target variable IDs
+2. Offer to generate a **Figma plugin manifest** that the user can run inside Figma desktop — a plugin has full Plugin API access to `node.setBoundVariable(field, variable)`, which is more reliable than REST for this operation
+3. OR tell the user to manually rebind via Figma's variable picker on each flagged layer (only viable for small sets)
+
+After execution, display results:
+
+```
+Layer Rebind Complete
+
+  Successfully rebound: 287 properties across 312 layers
+  Failed:                 0 layers
+  Skipped (near-match):  18 layers — flagged for manual review
+  Skipped (no match):     7 layers — kept as raw values
+
+  View in Figma: https://www.figma.com/file/<KEY>/
+```
+
+**Benefits of rebinding:**
+- Components stop using raw hex and start referencing variables
+- Changing a token value in one place now propagates to every bound layer automatically
+- Future theme additions (dark mode, brand skin) work immediately on all rebound layers
+- Removes "drift" where a color is used in 40 places with slight variations
+
+---
+
 ## Reference Files
 
 Load these on-demand as needed during execution — do NOT preload all at startup.
@@ -451,7 +582,7 @@ Load these on-demand as needed during execution — do NOT preload all at startu
 |------|-------------|
 | `references/w3c-format.md` | After user chooses W3C DTCG format |
 | `references/cti-format.md` | After user chooses CTI format |
-| `references/figma-api.md` | Before making any API calls (extract or write-back) |
+| `references/figma-api.md` | Before making any API calls (extract, write-back, or layer rebind) |
 | `references/naming-rules.md` | During token classification and naming (step E3) |
 | `references/output-templates.md` | When generating output files (step E5) |
 
