@@ -14,16 +14,17 @@ Extract design tokens from Figma design system files and write them back. Suppor
 
 ## Install
 
-### Option A: Clone into plugins (recommended)
+### Option A: Clone as a plugin (recommended)
 
 ```bash
+mkdir -p ~/.claude/plugins/marketplaces
 cd ~/.claude/plugins/marketplaces
-git clone https://github.com/gregorymm/design-tokens.git gregorymm-design-tokens
+git clone https://github.com/gregorymm/design-tokens.git design-tokens
 ```
 
-Restart Claude Code. The `design-tokens` skill will be auto-discovered.
+Restart Claude Code.
 
-### Option B: Copy to local skills (no git)
+### Option B: Install as a standalone skill (no plugin wrapper)
 
 ```bash
 mkdir -p ~/.claude/skills/design-tokens/references
@@ -37,15 +38,34 @@ done
 
 Restart Claude Code.
 
-## Usage
+## How to use in Claude Code
 
-Say any of:
-- "extract design tokens from my Figma files"
-- "figma tokens"
-- "write tokens back to Figma"
-- `/design-tokens`
+The skill is **auto-triggered** when you say anything that matches its description. Try any of these:
 
-The skill walks you through format choice (W3C vs CTI), access method (MCP vs REST API), and file selection.
+- `extract design tokens from my Figma files`
+- `export figma variables as design tokens`
+- `extract tokens from https://figma.com/design/<KEY>/...`
+- `sync tokens between Figma and code`
+- `write my tokens.json back to Figma`
+- `pull design tokens from these Figma files: <url1> <url2>`
+
+Claude Code will match your message to the skill's description (`extract tokens`, `figma tokens`, `design tokens`, `token export`, `write tokens back`, `push tokens to figma`, `sync tokens`) and run it automatically.
+
+### What happens next
+
+The skill walks you through:
+
+1. **Mode** — Extract (Figma → Code) or Write-back (Code → Figma)
+2. **Format** — W3C DTCG or CTI
+3. **Access method** — Figma Desktop MCP (needs app open) or Figma REST API (needs a Personal Access Token)
+4. **Files** — paste one or more Figma file URLs
+5. **Output directory** — defaults to `./design-tokens/`
+
+It introspects master components to derive semantic + component tokens, runs a self-check, then writes `tokens.json`, `tokens.css`, `tokens.scss`, and `style-dictionary.config.json`.
+
+### Verify the skill is installed
+
+In Claude Code, ask: `what skills do you have?` — `design-tokens` should appear in the list. Or just say `extract design tokens` and see if the skill triggers.
 
 ## Token Format Comparison
 
