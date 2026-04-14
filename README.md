@@ -10,7 +10,7 @@ Extract design tokens from Figma design system files and write them back. Suppor
 - Derives semantic tokens from master component variant properties (Type, State, Size)
 - Generates 4 output files: `tokens.json`, `tokens.css`, `tokens.scss`, `style-dictionary.config.json`
 - Merges multi-theme modes (Light/Dark) into a single file with theme selectors
-- **Write-back**: push local token changes to Figma via REST API with diff preview and confirmation
+- **Write-back** — push tokens to Figma AND rebind existing layers so components reference variables instead of raw hex. Works on all paid plans: REST API for Enterprise, generated Figma plugin for Professional/Organization.
 
 ## Install
 
@@ -83,11 +83,26 @@ The skill walks you through:
 
 1. **Mode** — Extract (Figma → Code) or Write-back (Code → Figma)
 2. **Format** — W3C DTCG or CTI
-3. **Access method** — Figma Desktop MCP (needs app open) or Figma REST API (needs a Personal Access Token)
-4. **Files** — paste one or more Figma file URLs
-5. **Output directory** — defaults to `./design-tokens/`
+3. **Figma plan** — Starter / Professional / Organization / Enterprise (routes the write-back method)
+4. **Access method** — Figma Desktop MCP (needs app open) or Figma REST API (needs a Personal Access Token)
+5. **Files** — paste one or more Figma file URLs
+6. **Output directory** — defaults to `./design-tokens/`
 
 It introspects master components to derive semantic + component tokens, runs a self-check, then writes `tokens.json`, `tokens.css`, `tokens.scss`, and `style-dictionary.config.json`.
+
+After extraction, it asks if you want to **push the tokens back to Figma and rebind layers** (variables + layer bindings so components reference variables instead of raw hex).
+
+## Write-back & Layer Rebind
+
+The skill can push extracted tokens back to Figma and rebind existing layers. The method depends on your plan:
+
+| Plan | Method | Speed |
+|------|--------|-------|
+| **Enterprise** | REST API (`POST /v1/files/:key/variables`) | Fast, headless |
+| **Professional / Organization** | Generated Figma plugin (manifest.json + code.js you load in Figma desktop) | Manual trigger, runs inside Figma |
+| **Starter (free)** | Not supported — use Tokens Studio or upgrade | — |
+
+The **layer rebind** step walks every node across your Figma files, matches raw hex/number values to your new tokens, and replaces them with variable bindings. Result: components stop using `#4B64FF` directly and start referencing `color.primitive.accent.500`. Changing a token value then propagates to every bound layer automatically.
 
 ### Verify the skill is installed
 
