@@ -1,0 +1,20 @@
+{
+  "name": "design-tokens",
+  "owner": {
+    "name": "Gregory Muryn-Mukha"
+  },
+  "metadata": {
+    "description": "Extract design tokens from Figma in W3C DTCG or CTI format. Generates JSON, CSS, SCSS, and Style Dictionary config. Write tokens back to Figma via REST API."
+  },
+  "plugins": [
+    {
+      "name": "design-tokens",
+      "source": "./",
+      "description": "Extract design tokens from Figma design system files and write them back. Supports W3C DTCG and CTI naming conventions, 3-layer token architecture (Primitive, Semantic, Component), multi-theme modes, and bidirectional sync via Figma REST API.",
+      "version": "1.0.0",
+      "license": "MIT",
+      "keywords": ["design-tokens", "figma", "w3c-dtcg", "cti", "style-dictionary", "css-variables", "design-system", "token-extraction"],
+      "category": "design"
+    }
+  ]
+}
