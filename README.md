@@ -14,43 +14,28 @@ Extract design tokens from Figma design system files and write them back. Suppor
 
 ## Install
 
-### Option A: Claude Code CLI (recommended)
-
-Run inside Claude Code:
-
-```
-/install-plugin gregorymm/design-tokens
-```
-
-### Option B: Manual install
-
-1. Clone the repo into your Claude Code plugins directory:
+### Option A: Clone into plugins (recommended)
 
 ```bash
 cd ~/.claude/plugins/marketplaces
 git clone https://github.com/gregorymm/design-tokens.git gregorymm-design-tokens
 ```
 
-2. Restart Claude Code. The `design-tokens` skill will be auto-discovered.
+Restart Claude Code. The `design-tokens` skill will be auto-discovered.
 
-### Option C: Add as a marketplace source
+### Option B: Copy to local skills (no git)
 
-Add to your `~/.claude/settings.json`:
-
-```json
-{
-  "extraKnownMarketplaces": {
-    "gregorymm-design-tokens": {
-      "source": {
-        "source": "github",
-        "repo": "gregorymm/design-tokens"
-      }
-    }
-  }
-}
+```bash
+mkdir -p ~/.claude/skills/design-tokens/references
+curl -sL https://raw.githubusercontent.com/gregorymm/design-tokens/main/skills/design-tokens/SKILL.md \
+  -o ~/.claude/skills/design-tokens/SKILL.md
+for f in cti-format figma-api naming-rules output-templates w3c-format; do
+  curl -sL "https://raw.githubusercontent.com/gregorymm/design-tokens/main/skills/design-tokens/references/${f}.md" \
+    -o ~/.claude/skills/design-tokens/references/${f}.md
+done
 ```
 
-Then enable the plugin in Claude Code settings.
+Restart Claude Code.
 
 ## Usage
 
