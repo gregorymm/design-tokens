@@ -120,24 +120,28 @@ If Figma structure is flat or ambiguous:
 ## Naming Formulas
 
 ### CTI Format
-Physical property leads. Category is always first.
+Physical property leads. Category is always first. Follows strict Style Dictionary `Category-Type-Item-Subitem-State` order.
 
 **Semantic:** `{category}-{property}-{role}-{prominence}-{state}`
 - `color-bg-primary` (default state implied)
 - `color-bg-primary-hover`
+- `color-bg-brand`
 - `color-text-on-primary`
 - `color-text-error-muted`
 - `spacing-padding-md`
 - `radius-lg`
 - `shadow-md`
 
-**Component:** `{category}-{component}-{property}-{role}-{prominence}-{state}`
-- `color-button-bg-accent`
-- `color-button-bg-accent-hover`
-- `color-button-text-accent`
-- `color-input-border-focus`
-- `spacing-button-padding-sm`
-- `radius-button-md`
+**Component:** `{category}-{property}-{component}-{subitem}-{state}`
+
+Property (Type) comes BEFORE the component name in strict CTI. Component and subitem are nested under property.
+- `color-bg-button-primary` (Category=color, Type=bg, Item=button, Subitem=primary)
+- `color-bg-button-primary-hover`
+- `color-text-button-primary`
+- `color-border-input-focus`
+- `radius-button-md` (when only one property applies, no nested subitem)
+
+**Common mistake:** writing `color-button-bg-primary` (component before property). That's OOD/W3C order, not CTI. In CTI, the physical property leads so developers can grep all backgrounds with `color-bg-`.
 
 ### W3C Format
 Component/context leads. Category is at the end.
