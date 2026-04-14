@@ -300,7 +300,7 @@ Ask the user for the output directory path. Default to `./design-tokens/`.
 **MANDATORY.** Before writing any output file, review the generated token structure against this checklist. Read `references/naming-rules.md` section "Disambiguation: Radius vs Spacing" if needed.
 
 **Category assignment checks:**
-- [ ] **Radius vs Spacing:** Variables with small numeric values (4-18px) that vary per breakpoint — are they `radius` or `spacing`? Check the Figma variable name, sibling tokens in the same collection, and Figma scopes. If the variable sits in a collection alongside `Radius-*` tokens, it is radius. If it sits alongside `Padding-*` or `Gap-*` tokens, it is spacing. Never assume based on value alone.
+- [ ] **Radius vs Spacing (prefix consistency rule):** If ANY token in the input data uses an explicit `Radius-` prefix, then tokens WITHOUT that prefix (like `Container/Large/xl`, `Form-large/md`, `Control-panel/Panel-item/xl`) are NOT radius. They are likely spacing/padding. See `references/naming-rules.md` Rule 1. **Common failure:** classifying `Container/Large/xl: 16` as radius just because the value is small — this is wrong when `Radius-*` prefixed tokens exist. When in doubt, ASK THE USER — don't guess silently.
 - [ ] **Spacing vs Size:** `width`/`height` values are `size`, not `spacing`. Only padding, margin, and gap are `spacing`.
 - [ ] **Font size vs Dimension:** Font sizes should be under `font.size`, not generic `dimension` or `spacing`.
 - [ ] **Opacity colors vs Solid colors:** Hex values with alpha (e.g., `#FFFFFF1F`) should be under `color.opacity`, not mixed into the main palette.

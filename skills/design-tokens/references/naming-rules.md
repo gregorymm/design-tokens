@@ -179,16 +179,54 @@ Conversion: replace `/` with the target separator, add prefix if needed.
 
 ## Disambiguation: Radius vs Spacing
 
-Figma variables sometimes lack a category prefix. Use these heuristics to distinguish radius from spacing:
+This is the most common classification mistake. Follow these rules in order — do not skip ahead.
 
-| Signal | → Radius | → Spacing |
-|--------|----------|-----------|
-| Name contains `Radius`, `radius`, `corner`, `round` | Yes | |
-| Name contains `padding`, `gap`, `margin`, `space`, `inset` | | Yes |
-| Sibling variables in the same collection are named `Radius-*` | Likely radius | |
-| Values are small (4-18px) and vary per breakpoint (md/lg/xl/2xl) | Could be either — check siblings |
-| Component name is a container/panel/form AND sibling tokens are radius tokens | Likely radius | |
-| Figma scope includes `CORNER_RADIUS` | Yes | |
-| Figma scope includes `GAP` or `PADDING` | | Yes |
+### Rule 1 — Prefix consistency (strongest signal)
 
-**Rule:** When a variable name like `Container/Large/xl: 16` has no category prefix, check its Figma variable scopes (if available via REST API). If scopes aren't available, check sibling tokens in the same collection — if the collection contains `Radius-*` tokens, assume these are also radius. If truly ambiguous, ask the user.
+**If any token in the file is explicitly prefixed with a category marker (e.g., `Radius-`), then tokens WITHOUT that prefix are NOT in that category.**
+
+Example from a real design system:
+
+```
+Radius-Button-small/xl: 6      ← explicit "Radius-" prefix → radius
+Radius-Button-icon/xs: 5       ← explicit "Radius-" prefix → radius
+Radius-Pop-over/md: 9          ← explicit "Radius-" prefix → radius
+Container/Large/xl: 16         ← NO "Radius-" prefix → NOT radius (likely spacing)
+Form-large/md: 12              ← NO "Radius-" prefix → NOT radius (likely spacing)
+Control-panel/Panel-item/md: 6 ← NO "Radius-" prefix → NOT radius (likely spacing)
+```
+
+**Why:** If the author wanted these to be radius tokens, they would have named them `Radius-Container/Large/xl` — consistent with the existing convention. The absence of the prefix is a deliberate signal.
+
+### Rule 2 — Explicit category words
+
+| Token name contains | Category |
+|--------------------|----------|
+| `Radius`, `radius`, `corner`, `round` | radius |
+| `Padding`, `padding`, `gap`, `margin`, `inset`, `space`, `spacing` | spacing |
+| `Size`, `width`, `height` | size |
+| `Font`, `text`, `type` | font |
+
+### Rule 3 — Figma variable scopes (if available via REST API)
+
+| Scope field | Category |
+|------------|----------|
+| `CORNER_RADIUS` | radius |
+| `GAP`, padding scopes | spacing |
+| `WIDTH_HEIGHT` | size |
+| `FONT_SIZE`, `FONT_WEIGHT`, etc. | font |
+
+### Rule 4 — Common UI component semantics
+
+| Component name in token | Most likely category |
+|-------------------------|---------------------|
+| `Container`, `Form`, `Panel`, `Card body` | spacing (inner padding) |
+| `Button-icon`, `Button-small`, `Pop-over`, `Avatar` | radius (small rounded shapes) |
+
+### Rule 5 — Ask if ambiguous
+
+If none of the above give a confident answer, ask the user:
+
+> "I found these tokens with ambiguous names: `Container/Large/xl: 16`, `Form-large/md: 12`. These could be either border-radius or padding/spacing values. What category do they belong to?"
+
+**Never guess silently.** A silent misclassification is a bug that ships to the user's code.
