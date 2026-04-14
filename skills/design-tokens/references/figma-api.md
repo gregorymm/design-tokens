@@ -2,17 +2,22 @@
 
 ## ⚠️ Plan Requirements (IMPORTANT)
 
-**The Figma Variables REST API is Enterprise-only.** The `file_variables:read` and `file_variables:write` scopes only appear in PAT settings for users on Figma Enterprise plans.
+**The Figma Variables REST API is Enterprise-only.** The `file_variables:read` and `file_variables:write` scopes only appear in PAT settings for users on Figma Enterprise plans. However, variables *can* be read and written on other plans via the **Plugin API** (a Figma plugin running inside the desktop app).
 
-| Figma Plan | `/styles` endpoint | `/nodes` endpoint | `/variables/local` endpoint | Write-back `POST /variables` |
-|------------|-------------------|-------------------|---------------------------|------------------------------|
-| Starter / Professional / Organization | ✅ | ✅ | ❌ 403 | ❌ 403 |
+| Figma Plan | `/styles` + `/nodes` (REST) | `/variables/local` (REST) | `POST /variables` (REST) | Plugin API (`figma.variables.*`) |
+|------------|----------------------------|---------------------------|--------------------------|----------------------------------|
+| Starter (free) | ✅ | ❌ 403 | ❌ 403 | ⚠️ local only, no library publish |
+| Professional | ✅ | ❌ 403 | ❌ 403 | ✅ |
+| Organization | ✅ | ❌ 403 | ❌ 403 | ✅ |
 | Enterprise | ✅ | ✅ | ✅ | ✅ |
 
-**Before prompting for a PAT, ask the user what Figma plan they're on.** If they're not on Enterprise:
-- Recommend the **Figma Desktop MCP path** instead (works on all plans)
-- Or fall back to **styles-only extraction** via REST API (no variables, but typography/effects/color styles still work)
-- Write-back is not possible — only available on Enterprise
+**Recommended write-back method by plan:**
+
+- **Enterprise** → REST API (fast, headless, batch)
+- **Professional / Organization** → generate a small Figma plugin the user loads once; it uses the Plugin API to create variables and bind layers
+- **Starter (free)** → not supported; recommend a third-party plugin like Tokens Studio
+
+**Before prompting for a PAT**, ask the user what Figma plan they're on, then route accordingly.
 
 ## Authentication
 

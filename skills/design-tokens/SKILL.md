@@ -345,7 +345,13 @@ Extraction Complete
 
 ### E8: Offer Write-Back (ALWAYS PROMPT)
 
-**MANDATORY.** After displaying the extraction summary, always offer to push the extracted tokens back into Figma and rebind existing layers to use them. This is the promise of bidirectional sync — don't skip it.
+**MANDATORY.** After displaying the extraction summary, always offer to push the extracted tokens back into Figma and rebind existing layers. This is the promise of bidirectional sync — don't skip it.
+
+Write-back works on **all paid plans** (Professional, Organization, Enterprise) — but the method differs:
+
+- **Enterprise** → REST API (fast, headless, batch)
+- **Professional / Organization** → generated Figma plugin (skill writes a small plugin, user runs it once in Figma desktop)
+- **Starter (free)** → not supported; recommend upgrading or using Tokens Studio
 
 Present the prompt:
 
@@ -356,22 +362,24 @@ Push these tokens back to Figma and rebind layers?
       (components stop using raw hex, start referencing the new variables)
    B) Variables only — create/update Figma variables but DO NOT rebind layers
    C) No — skip write-back, I'll use the generated files only
-
-Note: Write-back requires Figma Enterprise for the Variables REST API.
-On non-Enterprise plans, this option is not available.
 ```
 
-**If the user picked Enterprise earlier in Step 3**, all three options are valid — route:
-- **A** → run Write-Back Flow (W1–W7) AND Layer Rebind Flow (R1–R4)
-- **B** → run Write-Back Flow only (W1–W7)
-- **C** → end
+Then route by the plan tier collected in Step 3:
 
-**If the user is NOT on Enterprise**, skip the offer entirely and end with a note:
+| User's plan | Option A | Option B | Option C |
+|------------|----------|----------|----------|
+| Enterprise | Run REST Write-Back (W1–W7) → REST Layer Rebind (R1–R4) | Run REST Write-Back only (W1–W7) | End |
+| Professional / Organization | Generate Figma Plugin (P1–P4) with variables + rebind | Generate Figma Plugin (P1–P4) with variables only | End |
+| Starter (free) | Show note below | Show note below | End |
+
+**For Starter plan users only:**
 
 ```
-Write-back is not available on your Figma plan.
-To push tokens to Figma, upgrade to Enterprise or use a Figma plugin
-(e.g. Tokens Studio) that imports tokens.json directly.
+Write-back requires a paid Figma plan (Professional or higher).
+Alternatives:
+  - Use Tokens Studio plugin to import your tokens.json
+  - Upgrade your Figma plan
+  - Use the generated CSS/SCSS files directly in code (no Figma sync)
 ```
 
 ---
@@ -571,6 +579,85 @@ Layer Rebind Complete
 - Changing a token value in one place now propagates to every bound layer automatically
 - Future theme additions (dark mode, brand skin) work immediately on all rebound layers
 - Removes "drift" where a color is used in 40 places with slight variations
+
+---
+
+## Figma Plugin Flow (Professional / Organization plans)
+
+When the user is on Professional or Organization and wants to write back, the skill generates a small Figma plugin they load once in the desktop app. The plugin reads `tokens.json` and uses the Plugin API (`figma.variables.*` + `node.setBoundVariable()`) to create/update variables and rebind layers — no Enterprise required.
+
+### P1: Generate Plugin Files
+
+Create a plugin directory alongside the tokens output (default `./design-tokens/figma-plugin/`):
+
+```
+design-tokens/figma-plugin/
+  manifest.json          # Plugin manifest
+  code.js                # Main plugin code (reads tokens, applies to Figma)
+  ui.html                # Simple UI with "Apply tokens" + "Rebind layers" buttons
+  tokens.json            # Copy of the extracted tokens the plugin reads
+```
+
+**manifest.json:**
+```json
+{
+  "name": "Design Tokens Sync",
+  "id": "design-tokens-sync",
+  "api": "1.0.0",
+  "main": "code.js",
+  "ui": "ui.html",
+  "editorType": ["figma"],
+  "networkAccess": { "allowedDomains": ["none"] }
+}
+```
+
+**code.js** should contain:
+- Parse the embedded `tokens.json`
+- `ensureCollection(name)` — find or create a variable collection
+- `ensureVariable(path, type, collection)` — find or create a variable by path
+- `setValue(variable, modeId, value)` — set raw value or `VARIABLE_ALIAS` reference
+- `rebindLayers()` — walk `figma.root.findAll()`, match raw fills/strokes/radius/padding to tokens, call `node.setBoundVariable(field, variable)` for each match
+- Message bridge to `ui.html` for progress/confirmation
+
+**ui.html:** a minimal UI with:
+- Two buttons: `Apply tokens` (variables only) and `Apply + Rebind layers`
+- Progress output area
+- Error display
+
+### P2: Instruct the User
+
+Show step-by-step setup in the chat:
+
+```
+Generated Figma plugin at: ./design-tokens/figma-plugin/
+
+To use it:
+  1. Open Figma desktop → right-click your design file → "Plugins" → "Development" → "Import plugin from manifest..."
+  2. Select ./design-tokens/figma-plugin/manifest.json
+  3. The plugin will appear under "Plugins → Development → Design Tokens Sync"
+  4. Run it in each file you want to sync
+  5. Click "Apply + Rebind layers" to push tokens AND rebind, or "Apply tokens" for variables only
+
+The plugin reads tokens.json embedded in its folder — re-run extraction to update.
+```
+
+### P3: Handle Multi-File Sync
+
+If the user extracted from multiple Figma files, note that:
+- The plugin must be run once per file (Figma plugins run inside one document at a time)
+- The plugin can share one tokens.json across all runs
+- Alternatively, generate per-file plugins if token subsets differ
+
+### P4: Verify
+
+After the user reports the plugin has run, optionally re-run the extraction flow on the same file(s) to verify variables and bindings. Compare the new extraction against the original — all tokens should now exist as Figma variables, and the warnings about "raw values used in components" should be reduced.
+
+### Plugin API Limitations
+
+The Plugin API has some quirks:
+- **Cannot publish variables to libraries** from a plugin on Free plan — Team library publishing requires a paid plan UI action
+- **`setBoundVariable()` only works on supported fields** — fills, strokes, effects (color), cornerRadius, item spacing, padding, width/height, typography fields
+- **Alias chains** — semantic → primitive aliases must be created in order (primitives first) because aliases reference Figma IDs that don't exist until creation completes
 
 ---
 
