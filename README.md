@@ -14,7 +14,17 @@ Extract design tokens from Figma design system files and write them back. Suppor
 
 ## Install
 
-### Option A: Clone as a plugin (recommended)
+### Quick install (one line)
+
+```bash
+curl -sL https://raw.githubusercontent.com/gregorymm/design-tokens/main/install.sh | bash
+```
+
+This clones the plugin into `~/.claude/plugins/marketplaces/design-tokens`, registers it in `~/.claude/settings.json`, and you're done. **Restart Claude Code** and use `/design-tokens`.
+
+Requires `git` and `node`.
+
+### Manual install
 
 **Step 1** — Clone the plugin:
 
@@ -24,7 +34,7 @@ cd ~/.claude/plugins/marketplaces
 git clone https://github.com/gregorymm/design-tokens.git design-tokens
 ```
 
-**Step 2** — Register it in `~/.claude/settings.json`. Add two entries:
+**Step 2** — Register it in `~/.claude/settings.json`. Merge these two entries into the existing objects (don't overwrite):
 
 ```json
 {
@@ -42,23 +52,7 @@ git clone https://github.com/gregorymm/design-tokens.git design-tokens
 }
 ```
 
-Merge these into your existing `enabledPlugins` and `extraKnownMarketplaces` objects (don't overwrite them).
-
 **Step 3** — Restart Claude Code.
-
-### Option B: Install as a standalone skill (no plugin wrapper)
-
-```bash
-mkdir -p ~/.claude/skills/design-tokens/references
-curl -sL https://raw.githubusercontent.com/gregorymm/design-tokens/main/skills/design-tokens/SKILL.md \
-  -o ~/.claude/skills/design-tokens/SKILL.md
-for f in cti-format figma-api naming-rules output-templates w3c-format; do
-  curl -sL "https://raw.githubusercontent.com/gregorymm/design-tokens/main/skills/design-tokens/references/${f}.md" \
-    -o ~/.claude/skills/design-tokens/references/${f}.md
-done
-```
-
-Restart Claude Code.
 
 ## How to use in Claude Code
 
